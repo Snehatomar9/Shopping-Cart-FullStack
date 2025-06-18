@@ -8,7 +8,14 @@ const productSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: true
+        required: true,
+        trim:true,
+    },
+    category:{
+        type:String,
+        enum:["clothing", "Electronics","Toys and Games","Sports","Books and Media","Home and Kitchen"],
+        required:true,
+        trim:true
     },
     price: {
         type: Number,
@@ -16,10 +23,12 @@ const productSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true
+        required: true,
+        trim:true
     },
-    freeDelivery: {
+    isfreeDelivery: {
         type: Boolean,
+        default:true,
     },
     ratings: {
         type: Number,

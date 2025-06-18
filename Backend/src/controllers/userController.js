@@ -1,6 +1,8 @@
 const userModel = require("../models/UserModel");
 const mongoose = require("mongoose");
 const { isValid, isValidName, isValidEmail, isValidContact, isValidPassword } = require("./validation");
+const bcrypt = require("bcrypt");
+const jwt=require("jsonwebtoken");
 
 // add Data
 const addUser = async (req, res) => {
@@ -30,15 +32,18 @@ const addUser = async (req, res) => {
         }
         let duplicateEmail = await userModel.findOne({ userEmail });
         if (duplicateEmail) {
-            return res.status(400).json({ msg: "Emial already exists" })
+            return res.status(400).json({ msg: "Email already exists" })
         }
         // pass
         if (!isValid(userPassword)) {
             return res.status(400).json({ msg: "Please Enter PassWord" })
         }
         if (!isValidPassword(userPassword)) {
-            return res.status(400).json({ msg: "Invalid user Password" })
+            return res.status(400).json({ msg: "Password must contain 6-20 charcters, 1 uppercase,1 lowercase, 1 number and 1 special character" })
         }
+        const salt = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(userPassword, salt)
+
         // phone
         if (!isValid(userContact)) {
             return res.status(400).json({ msg: "Please Enter Contact Number" })
@@ -58,6 +63,12 @@ const addUser = async (req, res) => {
         if (!isValid(gender)) {
             return res.status(400).json({ msg: "Please Enter gender" })
         }
+
+        let validGenders = ["male", "female", "others"]
+        if (!validGenders.includes(gender.trim().toLowercase())) {
+            return res.status(400).json({ msg: "Gender must be 'male', 'female', 'others' " })
+        }
+
         // age
         if (!isValid(age)) {
             return res.status(400).json({ msg: "Please Enter Age" })
@@ -91,9 +102,13 @@ const updateUser = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ msg: "Invalid user Id" });
         }
+        if (Object.keys(data).length === 0) {
+            return res.status(400).json({ msg: "Bad Request, No data Provided" })
+        }
 
         let { userName, userEmail, userContact, userPassword, gender, age, userAddress } = data;
 
+        //validate username
         if (userName != undefined) {
             if (!isValid(userName)) {
                 return res.status(400).json({ msg: "user Name is required" })
@@ -102,7 +117,7 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ msg: "Invalid user name" })
             }
         }
-
+        //validate user email
         if (userEmail != undefined) {
             if (!isValid(userEmail)) {
                 return res.status(400).json({ msg: "Email is required" })
@@ -115,8 +130,8 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ msg: "Email already exists" })
             }
         }
-
-        if (userContact !=undefined) {
+        //validate user contact
+        if (userContact != undefined) {
             if (!isValid(userContact)) {
                 return res.status(400).json({ msg: "Contact is required" })
             }
@@ -128,26 +143,45 @@ const updateUser = async (req, res) => {
                 return res.status(400).json({ msg: "Phone number is already exists" })
             }
         }
-
+        //password
+        let salt;
+        let hashedPassword;
+        if (userPassword !== undefined) {
+            if (!isValidPassword) {
+                return res.status(400).json({ msg: "Password is Required" })
+            }
+            if (!isValidPassword(password)) {
+                return res.status(400).json({ msg: "password must contain 6-20 characters, i upeercase, i lowercase, 1 number and 1 special character" })
+            }
+            salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password, salt);
+        }
+        //validate user address
         if (userAddress !== undefined) {
             if (!isValid(userAddress)) {
                 return res.status(400).json({ msg: "Address is required" })
             }
         }
-
+        // valid gender
         if (gender !== undefined) {
             if (!isValid(gender)) {
                 return res.status(400).json({ msg: "Gender is Required" })
             }
+            let validGenders = ["male", "female", "others"];
+            if (!validGenders.includes(gender.trim().toLowercase())) {
+                return res.status(400).json({ msg: "Gender must be 'male','female'and 'others'" })
+            }
         }
-
+        //age validate
         if (age !== undefined) {
             if (!isValid(age)) {
                 return res.status(400).json({ msg: "Age Required" })
             }
         }
-
-        let update = await userModel.findByIdAndUpdate(userId, data, { new: true });
+        let update = await userModel.findByIdAndUpdate(userId, { userName, userEmail, userContact, userPassword: hashedPassword, userAddress, gender, age }, { new: true })
+        if (!update) {
+            return res.status(404).json({ msg: "No user found" })
+        }
         return res.status(200).json({ msg: "User data update successfully", update });
     } catch (error) {
         console.log(error);
@@ -155,10 +189,19 @@ const updateUser = async (req, res) => {
     }
 }
 
-// delete
+// delete user data
 const deleteUser = async (req, res) => {
     try {
         let deleteId = req.params.id;
+        if (!mongoose.Type.ObjectId.isValid(deleteId)) {
+            return res.status(400).json({ msg: "Invalid user Id" })
+        }
+        // const user=await userModel.findById(userId);
+        // if(!user){
+        //     return res.status(404).json({msg:"user not found"})
+        // }
+        // await userModel.findByIdAndDelete(userId);
+        // return res.status(200).json({"user deleted successfully"})
         const deleteUserById = await userModel.findByIdAndDelete(deleteId);
         if (!deleteUserById) {
             return res.status(400).json({ msg: "user not found" })
@@ -170,28 +213,34 @@ const deleteUser = async (req, res) => {
     }
 }
 
-// get user by gender
-const getUserByGender = async (req, res) => {
-    try {
-        const gender = req.body.gender;
-
-        if (!isValid(gender)) {
-            return res.status(400).json({ msg: "Gender is required" })
+//login user
+const loginUser=async(req,res)=>{
+    try{
+        if(Object.keys(req.body).length===0){
+            return res.status(400).json({msg:"Bad request, No data found"});
         }
-
-        const users = await userModel.find({ gender: gender.toLowerCase() })
-
-        if (users.length === 0) {
-            return res.status(404).json({ msg: "No users found" })
+        let{userEmail, userPassword}=req.body;
+        if(!isValid(userEmail)  ){
+            return res.status(400).json({msg:"Email  are require"})
         }
-
-        return res.status(200).json({ users })
-    } catch (error) {
+        if(!isValid(userPassword)){
+            return res.status(400).json({msg:" Password are require"})
+        }
+        const user=await userModel.findOne({email});
+        if(!user){
+            return res.status(404).json({msg:"User not found with this email"})
+        }
+        const matchUser=await bcrypt.compare(userPassword, user.userPassword);
+        if(!matchUser){
+            return res.status(401).json({msg:"Incorrect password"})
+        }
+        const token=jwt.sign(
+            {userId:user._id,userEmail:user.userEmail},"my-secret-key",{expiresIn:"1h"}
+        );
+        return res.status(200).json({msg:"Login successfully",token});
+    }catch(error){
         console.log(error);
-        return res.status(500).json({ msg: "Internal server error" })
-
+        return res.status(500).json({ msg: "internal server error" });
     }
 }
-
-
-module.exports = { addUser, getUser, updateUser, deleteUser, getUserByGender };
+module.exports = { addUser, getUser, updateUser, deleteUser ,loginUser};

@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         required: true,
         unique: true,
+        trim:true,
     },
     userAddress: {
         type: String,
@@ -28,9 +29,11 @@ const userSchema = new mongoose.Schema({
         trim: true,
     },
     gender: {
-        type: ["male", "Female", "others"],
+        type: String,
+        enum:["male", "Female", "others"],
         required: true,
         trim: true,
+        lowercase:true,
     },
     age: {
         type: Number,
