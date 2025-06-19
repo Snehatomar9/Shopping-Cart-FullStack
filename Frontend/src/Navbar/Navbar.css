@@ -5,13 +5,17 @@
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 4px 20px black;
-    width: 100%;
-    background-color: rgb(184, 172, 172);
+    width: 95%;
+    height: 80px;
+    transform: translate(-50%);
+    background-color: transparent;
+    /* opacity: 1; */
     padding:1rem 3%;
     position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+    top: 20px;
+    left: 50%;
+    z-index: 9999;
+    border-radius: 15px;
     font-family: 'Montserrat',sans-serif;
     transition: all 0.3s ease;
 }
@@ -23,7 +27,7 @@
 .nav-logo img{
     /* border-radius: 50%; */
     width: auto;
-    height: 70px;
+    height: 90px;
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
     transition: transform 0.3s ease;
 }
