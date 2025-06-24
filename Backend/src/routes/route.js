@@ -1,18 +1,40 @@
-const express = require("express");
-const Route = express.Router();
-const { addUser, getUser, updateUser, deleteUser, loginUser } = require("../controllers/userController");
-// const {createProduct, getProductByQuery} = require("../controllers/productController");
+const router = require("express").Router();
+const {
+  addUsers,
+  getUsers,
+  updateUser,
+  deleteUser,
+  loginUser,
+} = require("../controllers/userController");
 
-//user
-Route.post("/addUser", addUser);
-Route.get("/getData", getUser);
-Route.put("/updateData/:id", updateUser);
-Route.delete("/deleteData/:id", deleteUser);
-Route.post("/loginUser", loginUser);
-// Route.get("getUserByGender", getUserByGender);
-// Route.post("/addProduct", createProduct);
-// Route.get("/getProductByQuery",getProductByQuery);
+const {
+  addProducts,
+  getAllProducts,
+  getProductById,
+  getProductsByQuery,
+  updateProduct,
+  deleteProduct,
+} = require("../controllers/productController");
 
+const authMiddleware = require("../middleware/authMiddleware");
 
+router.get("/", (req, res) => {
+  res.send("Hello From  Server");
+});
 
-module.exports = Route;
+// User
+router.post("/addUser", addUsers);
+router.get("/getAllUsers", authMiddleware, getUsers);
+router.put("/updateuser/:id", authMiddleware, updateUser);
+router.delete("/deleteUser/:id", authMiddleware, deleteUser);
+router.post("/login", loginUser);
+
+// Products
+router.post("/addProducts", authMiddleware, addProducts);
+router.get("/getAllProducts", getAllProducts);
+router.get("/getProductById/:id", getProductById);
+router.get("/getProductsByQuery", getProductsByQuery);
+router.put("/updateProduct/:id", authMiddleware, updateProduct);
+router.delete("/deleteProduct/:id", authMiddleware, deleteProduct);
+
+module.exports = router;

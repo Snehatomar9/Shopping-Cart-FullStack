@@ -198,20 +198,20 @@ input{
 }  */
  
 /* Basic Reset & Body Styling */
-* {
+/* * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-}
+} */
 
-body {
+/* body {
     font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* background-color: #ff2f5; Light background for the overall page */
-}
+    /* background-color: #ff2f5; 
+} */
 
 .container {
     display: flex;
@@ -220,7 +220,8 @@ body {
     background-color: #fff;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* Ensures rounded corners apply to contained elements */
+    margin-top: 100px;
+    overflow: hidden; 
 }
 
 .login-section {

@@ -1,9 +1,24 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const route = require("./routes/route");
+
 const app = express();
-const Route = require("./routes/route")
 
+app.use(express.json());
+app.use("/", route);
 
+mongoose
+  .connect(
+    "mongodb+srv://sumitcoc2nd:ltZ9asX4BPe9Rori@cluster0.wfi8x42.mongodb.net/E-Commerce"
+  )
+  .then(() => console.log("MongoDB Connected"))
+  .catch(() => console.log("DB Connection Failed"));
+
+app.listen(4000, (err) => {
+  err
+    ? console.log("Server Not Connected")
+    : console.log("Server is Running at port 4000");
+});
 //middleware
 // const middleware=(req,res,next)=>{
 //     console.log("This is Middleware 1");
@@ -29,25 +44,3 @@ const Route = require("./routes/route")
 // }
 // app.use(middleware);
 // app.use(middleware2);
-
-
-app.use(express.json());
-app.use("/", Route)
-mongoose.connect("mongodb+srv://snehatomar92003:14434918w@cluster0.42hcgok.mongodb.net/Shopping-Cart")
-    .then(() => console.log("DB Connected"))
-    .catch(() => console.log("DB not Connected"))
-
-// create server
-app.get("/", (req, res) => {
-    res.send("Hello")
-})
-
-
-// create path
-app.listen(2000, (err) => {
-    if (err) {
-        console.log(err);
-    } else {
-        console.log("Server is running at 2000");
-    }
-})
