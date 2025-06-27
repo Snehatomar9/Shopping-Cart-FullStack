@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
-    contactNo: {
+    contact: {
       type: Number,
       required: true,
       unique: true,
@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["male", "female", "others"],
       required: true,
+      trim: true,
       lowercase: true,
     },
     age: {

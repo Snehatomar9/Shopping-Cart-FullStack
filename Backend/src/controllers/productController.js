@@ -1,6 +1,6 @@
 const productModel = require("../models/productModel");
 const mongoose = require("mongoose");
-const { isValid, isValidURL } = require("./validator");
+const { isValid, isValidURL } = require("./validation");
 
 // Add Products
 const addProducts = async (req, res) => {

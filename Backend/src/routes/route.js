@@ -1,4 +1,5 @@
-const router = require("express").Router();
+const express = require("express");
+const Route = express.Router();
 const {
   addUsers,
   getUsers,
@@ -16,25 +17,47 @@ const {
   deleteProduct,
 } = require("../controllers/productController");
 
+const {
+  addToCart,
+  getCart,
+  updateCart,
+  removeItemFromCart,
+  clearCart,
+} = require("../controllers/cartController");
+
+const {
+  placeOrder,
+  getMyOrder,
+  cancelOrder,
+} = require("../controllers/orderController");
+
 const authMiddleware = require("../middleware/authMiddleware");
 
-router.get("/", (req, res) => {
-  res.send("Hello From  Server");
-});
-
 // User
-router.post("/addUser", addUsers);
-router.get("/getAllUsers", authMiddleware, getUsers);
-router.put("/updateuser/:id", authMiddleware, updateUser);
-router.delete("/deleteUser/:id", authMiddleware, deleteUser);
-router.post("/login", loginUser);
+Route.post("/addUser", addUsers);
+Route.get("/getAllUsers", authMiddleware, getUsers);
+Route.put("/updateUser/:id", authMiddleware, updateUser);
+Route.delete("/deleteUser/:id", authMiddleware, deleteUser);
+Route.post("/login", loginUser);
 
 // Products
-router.post("/addProducts", authMiddleware, addProducts);
-router.get("/getAllProducts", getAllProducts);
-router.get("/getProductById/:id", getProductById);
-router.get("/getProductsByQuery", getProductsByQuery);
-router.put("/updateProduct/:id", authMiddleware, updateProduct);
-router.delete("/deleteProduct/:id", authMiddleware, deleteProduct);
+Route.post("/addProducts", authMiddleware, addProducts);
+Route.get("/getAllProducts", getAllProducts);
+Route.get("/getProductById/:id", getProductById);
+Route.get("/getProductsByQuery", getProductsByQuery);
+Route.put("/updateProduct/:id", authMiddleware, updateProduct);
+Route.delete("/deleteProduct/:id", authMiddleware, deleteProduct);
 
-module.exports = router;
+// Cart
+Route.post("/addToCart", authMiddleware, addToCart);
+Route.get("/getCart", authMiddleware, getCart);
+Route.put("/updateCart", authMiddleware, updateCart);
+Route.delete("/removeItem/:productId", authMiddleware, removeItemFromCart);
+Route.delete("/clearCart", authMiddleware, clearCart);
+
+// Order
+Route.post("/placeOrder", authMiddleware, placeOrder);
+Route.get("/getMyOrder", authMiddleware, getMyOrder);
+Route.delete("/cancelOrder/:id", authMiddleware, cancelOrder);
+
+module.exports = Route;

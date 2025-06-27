@@ -5,12 +5,11 @@ const {
   isValidEmail,
   isValidPhone,
   isValidPassword,
-} = require("./validator");
+} = require("./validation");
 
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
-
-let jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
 // Add Users
 const addUsers = async (req, res) => {
@@ -20,7 +19,7 @@ const addUsers = async (req, res) => {
       return res.status(400).json({ msg: "Bad Request, No Data Provided" });
     }
 
-    let { name, email, contactNo, password, address, gender, age } = userData;
+    let { name, email, contact, password, address, gender, age } = userData;
 
     // Name Validation
     if (!isValid(name)) {
@@ -46,14 +45,14 @@ const addUsers = async (req, res) => {
     }
 
     // User Contact Validation
-    if (!isValid(contactNo)) {
+    if (!isValid(contact)) {
       return res.status(400).json({ msg: "Contact is Required" });
     }
-    if (!isValidPhone(contactNo)) {
+    if (!isValidPhone(contact)) {
       return res.status(400).json({ msg: "Invalid Contact" });
     }
 
-    let duplicateContact = await userModel.findOne({ contactNo });
+    let duplicateContact = await userModel.findOne({ contact });
     if (duplicateContact) {
       return res.status(400).json({ msg: "Contact Already Exists" });
     }
@@ -86,8 +85,8 @@ const addUsers = async (req, res) => {
       });
     }
 
-    let salt = await bcrypt.genSalt(10);
-    let hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Age Validation
     if (!isValid(age)) {
@@ -97,7 +96,7 @@ const addUsers = async (req, res) => {
     let user = await userModel.create({
       name,
       email,
-      contactNo,
+      contact,
       password: hashedPassword,
       address,
       gender,
@@ -110,42 +109,44 @@ const addUsers = async (req, res) => {
   }
 };
 
-// Get Users
+// Get All Users
 const getUsers = async (req, res) => {
   try {
-    let users = await userModel.find();
-    if (users.length === 0) {
+    let userData = await userModel.find();
+    if (userData.length === 0) {
       return res.status(404).json({ msg: "No User Found" });
     }
-    return res.status(200).json({ users });
+    return res.status(200).json({ userData });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ msg: "Internal Server Error", error });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 };
 
-// Update User
+// Update User Data
 const updateUser = async (req, res) => {
   try {
     let userId = req.params.id;
     let data = req.body;
 
-    let loggedInUserId = req.user.userId;
-    if (userId !== loggedInUserId) {
-      return res.status(403).json({ msg: "Access Denied! Invalid User!!!" });
-    }
-
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ msg: "Invalid User Id" });
+    }
+
+    let loggedInUserId = req.user.userId;
+    if (userId !== loggedInUserId) {
+      return res
+        .status(403)
+        .json({ msg: "Bad Authorisation!!! Invalid Token!" });
     }
 
     if (Object.keys(data).length === 0) {
       return res.status(400).json({ msg: "Bad Request, No Data Provided" });
     }
 
-    let { name, email, contactNo, password, address, gender, age } = data;
+    let { name, email, contact, password, address, gender, age } = data;
 
-    // Validate Name
+    // Validate userName
     if (name !== undefined) {
       if (!isValid(name)) {
         return res.status(400).json({ msg: "Name is Required" });
@@ -173,17 +174,18 @@ const updateUser = async (req, res) => {
       }
     }
 
-    // Validate Contact
-    if (contactNo !== undefined) {
-      if (!isValid(contactNo)) {
+    // Validate user Contact
+
+    if (contact !== undefined) {
+      if (!isValid(contact)) {
         return res.status(400).json({ msg: "Contact is Required" });
       }
 
-      if (!isValidPhone(contactNo)) {
+      if (!isValidPhone(contact)) {
         return res.status(400).json({ msg: "Invalid Contact" });
       }
 
-      let duplicateContact = await userModel.findOne({ contactNo });
+      let duplicateContact = await userModel.findOne({ contact });
       if (duplicateContact) {
         return res.status(400).json({ msg: "Contact Already Exists" });
       }
@@ -202,6 +204,7 @@ const updateUser = async (req, res) => {
           msg: "Password must be contain 6-20 characters, 1 uppercase, 1 lowercase, 1 number and 1 special character",
         });
       }
+
       salt = await bcrypt.genSalt(10);
       hashedPassword = await bcrypt.hash(password, salt);
     }
@@ -232,26 +235,19 @@ const updateUser = async (req, res) => {
 
     let update = await userModel.findByIdAndUpdate(
       userId,
-      {
-        name,
-        email,
-        contactNo,
-        password: hashedPassword,
-        address,
-        gender,
-        age,
-      },
+      { name, email, contact, password: hashedPassword, address, gender, age },
       { new: true }
     );
 
     if (!update) {
-      return res.status(404).json({ msg: "User Not Found" });
+      return res.status(404).json({ msg: "No User Found" });
     }
-
-    return res.status(200).json({ msg: "User Updated Successfully", update });
+    return res
+      .status(200)
+      .json({ msg: "User Data Updated Successfully", update });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ msg: "Internal Server Error", error });
+    return res.status(500).json({ msg: "Internal Server Error" });
   }
 };
 
@@ -262,6 +258,13 @@ const deleteUser = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ msg: "Invalid User Id" });
+    }
+
+    let loggedInUserId = req.user.userId;
+    if (userId !== loggedInUserId) {
+      return res
+        .status(403)
+        .json({ msg: "Bad Authorisation!!! Invalid Token!" });
     }
 
     const user = await userModel.findById(userId);
@@ -280,34 +283,34 @@ const deleteUser = async (req, res) => {
 // Login User
 const loginUser = async (req, res) => {
   try {
-    let { email, password } = req.body;
-
     if (Object.keys(req.body).length === 0) {
-      return res.status(400).json({ msg: "Bad Request, No Data Provided" });
+      return res.status(400).json({ msg: "Bad Request, No Data Found" });
     }
 
+    let { email, password } = req.body;
+
     if (!isValid(email)) {
-      return res.status(400).json({ msg: "Email is Required" });
+      return res.status(400).json({ msg: "Email is required" });
     }
 
     if (!isValid(password)) {
-      return res.status(400).json({ msg: "Password is Required" });
+      return res.status(400).json({ msg: "Password is required" });
     }
 
-    let user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ msg: "User not Found with this email" });
     }
 
-    let matchedUser = await bcrypt.compare(password, user.password);
-    if (!matchedUser) {
+    const matchUser = await bcrypt.compare(password, user.password);
+    if (!matchUser) {
       return res.status(401).json({ msg: "Incorrect Password" });
     }
 
-    let token = jwt.sign(
+    const token = jwt.sign(
       { userId: user._id, email: user.email },
-      "my-secret-key",
-      { expiresIn: "1h" }
+      "my-secret-key"
+      // { expiresIn: "1h" }
     );
 
     return res.status(200).json({ msg: "Login Successfull", token });
